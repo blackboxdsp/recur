@@ -10,45 +10,53 @@
 #include <SD.h>
 #include <SerialFlash.h>
 
-// OSC
-AudioSynthWaveform       osc01;     
+// oscillator
+AudioSynthWaveform       osc01;   
 AudioSynthWaveform       osc02;  
-AudioMixer4              oscMixer; 
-AudioInputI2S            input;          
-AudioMixer4              inputMixer;        
-AudioPlaySdWav           sampler;     
+AudioMixer4              oscMixer;
+AudioInputI2S            input;         
+AudioMixer4              inputMixer;
+AudioPlaySdWav           sampler;  
 AudioMixer4              samplerMixer;
-AudioMixer4              mixer;       
+AudioMixer4              mixer;
 
-// DELAY
-AudioEffectDelay         delayL;         
-AudioMixer4              mixerL;         
-AudioSynthWaveform       oscL01;        
+// delay
+AudioEffectDelay         delayL;
+AudioMixer4              mixerL;
+AudioSynthWaveform       oscL01;
+AudioSynthWaveform       oscL02;
 AudioEffectDigitalCombine combineL01; 
-AudioSynthWaveform       oscL02;        
-AudioEffectDigitalCombine combineL02;       
-AudioEffectDelay         delayR;        
-AudioMixer4              mixerR;         
-AudioSynthWaveform       oscR01;         
-AudioEffectDigitalCombine combineR01;
-AudioSynthWaveform       oscR02;         
+AudioEffectDigitalCombine combineL02;      
+AudioEffectDelay         delayR;
+AudioMixer4              mixerR;
+AudioSynthWaveform       oscR01;
+AudioSynthWaveform       oscR02;
+AudioEffectDigitalCombine combineR01; 
 AudioEffectDigitalCombine combineR02; 
 
-// FILTER
-AudioSynthWaveformDc     dc;           
-AudioEffectEnvelope      filterEgL;      
-AudioFilterStateVariable lpfL;        
-AudioFilterStateVariable hpfL; 
-AudioEffectEnvelope      ampEgL;   
-AudioEffectEnvelope      filterEgR;
+// filter
+AudioSynthWaveformDc     dc;          
+AudioEffectEnvelope      filterEgL;   
+AudioAmplifier           filterEgLAmp;        
+AudioMixer4              filterEgLAmpMixer;   
+AudioFilterStateVariable lpfL;      
+AudioFilterStateVariable hpfL;
+AudioMixer4              filterLMixer;   
+AudioEffectEnvelope      filterEgR; 
+AudioAmplifier           filterEgRAmp; 
+AudioMixer4              filterEgRAmpMixer; 
 AudioFilterStateVariable lpfR;
-AudioFilterStateVariable hpfR; 
+AudioFilterStateVariable hpfR;
+AudioMixer4              filterRMixer;
+
+// amp
+AudioEffectEnvelope      ampEgL;   
 AudioEffectEnvelope      ampEgR; 
 
-// OUTPUT
-AudioOutputI2S           output;        
+// output
+AudioOutputI2S           output;      
 
-// PATCHING
+// patching
 AudioConnection          patchCord1(osc02, 0, oscMixer, 1);
 AudioConnection          patchCord2(input, 0, inputMixer, 0);
 AudioConnection          patchCord3(input, 1, inputMixer, 1);
@@ -80,17 +88,63 @@ AudioConnection          patchCord28(combineR02, 0, mixerL, 2);
 AudioConnection          patchCord29(combineR01, 0, mixerR, 1);
 AudioConnection          patchCord30(dc, filterEgL);
 AudioConnection          patchCord31(dc, filterEgR);
-AudioConnection          patchCord32(filterEgL, 0, lpfL, 1);
-AudioConnection          patchCord33(filterEgL, 0, hpfL, 1);
-AudioConnection          patchCord34(filterEgR, 0, lpfR, 1);
-AudioConnection          patchCord35(filterEgR, 0, hpfR, 1);
-AudioConnection          patchCord36(lpfR, 0, ampEgR, 0);
-AudioConnection          patchCord37(lpfL, 0, ampEgL, 0);
-AudioConnection          patchCord38(ampEgR, 0, output, 1);
-AudioConnection          patchCord39(ampEgL, 0, output, 0);
+AudioConnection          patchCord32(filterEgL, filterEgLAmp);
+AudioConnection          patchCord33(filterEgL, 0, filterEgLAmpMixer, 0);
+AudioConnection          patchCord34(filterEgR, filterEgRAmp);
+AudioConnection          patchCord35(filterEgR, 0, filterEgRAmpMixer, 0);
+AudioConnection          patchCord36(filterEgRAmp, 0, filterEgRAmpMixer, 1);
+AudioConnection          patchCord37(filterEgLAmp, 0, filterEgLAmpMixer, 1);
+AudioConnection          patchCord38(filterEgRAmpMixer, 0, lpfR, 1);
+AudioConnection          patchCord39(filterEgRAmpMixer, 0, hpfR, 1);
+AudioConnection          patchCord40(filterEgLAmpMixer, 0, lpfL, 1);
+AudioConnection          patchCord41(filterEgLAmpMixer, 0, hpfL, 1);
+AudioConnection          patchCord42(lpfR, 0, filterRMixer, 0);
+AudioConnection          patchCord43(lpfL, 0, filterLMixer, 0);
+AudioConnection          patchCord44(hpfR, 2, filterRMixer, 1);
+AudioConnection          patchCord45(hpfL, 2, filterLMixer, 1);
+AudioConnection          patchCord46(filterLMixer, ampEgL);
+AudioConnection          patchCord47(filterRMixer, ampEgR);
+AudioConnection          patchCord48(ampEgR, 0, output, 1);
+AudioConnection          patchCord49(ampEgL, 0, output, 0);
 
 // SGTL5000
 AudioControlSGTL5000     control;
+
+// potentimoeters
+const int OSC_FREQUENCY_POT = A7;
+float p_oscFrequency = 110.0f;
+float p_osc01Gain = 0.5f;
+float p_osc02Gain = 0.5f;
+
+const int DELAY_OSC_FREQUENCY = A6;
+const int DELAY_TIME = A3;
+
+const int FILTER_CUTOFF = A2;
+float p_filterEgAttack = 10.0f;
+float p_filterEgDecay = 120.0f;
+float p_filterEgSustain = 0.4f;
+float p_filterEgRelease = 240.0f;
+float p_filterCutoff = 320.0f;
+float p_filterResonance = 1.4f;
+float p_filterOctaveControl = 3.6f;
+float p_filterEgInt = 0.0f;
+
+float p_ampEgAttack = 10.0f;
+float p_ampEgDecay = 120.0f;
+float p_ampEgSustain = 0.4f;
+float p_ampEgRelease = 240.0f;
+
+// switches
+int s_oscWaveform = 1;
+float s_oscMultiplier = 1.0f;
+
+// buttons
+const int TRIG_BUTTON_PIN = 0;
+Bounce trigButton = Bounce(TRIG_BUTTON_PIN, 18);
+
+////////////
+// SETUP  //
+////////////
 
 void setup() {
     Serial.begin(9600);
@@ -123,12 +177,68 @@ void initSdCard() {
 }
 
 void initControls() {
+    // potentiometers
 
+    // switches
+
+    // buttons
+    pinMode(TRIG_BUTTON_PIN, INPUT_PULLUP);
 }
 
 void initComponents() {
-  
+    // oscillator
+    osc01.begin(1.0f, p_oscFrequency, s_oscWaveform);
+    osc02.begin(1.0f, p_oscFrequency, s_oscWaveform);
+    oscMixer.gain(0, p_osc01Gain);
+    oscMixer.gain(1, p_osc02Gain);
+    mixer.gain(0, 1.0f);
+
+    // delay
+    mixerL.gain(0, 1.0f);
+    mixerR.gain(0, 1.0f);
+
+    // filter
+    dc.amplitude(1.0f);
+    filterEgL.attack(p_filterEgAttack);
+    filterEgL.decay(p_filterEgDecay);
+    filterEgL.sustain(p_filterEgSustain);
+    filterEgL.release(p_filterEgRelease);
+    filterEgLAmp.gain(1.0f);
+    filterEgLAmpMixer.gain(0, 1.0f - p_filterEgInt);
+    filterEgLAmpMixer.gain(0, p_filterEgInt);
+    lpfL.frequency(p_filterCutoff);
+    lpfL.resonance(p_filterResonance);
+    lpfL.octaveControl(p_filterOctaveControl);
+
+    filterEgR.attack(p_filterEgAttack);
+    filterEgR.decay(p_filterEgDecay);
+    filterEgR.sustain(p_filterEgSustain);
+    filterEgR.release(p_filterEgRelease);
+    filterEgRAmp.gain(1.0f);
+    filterEgRAmpMixer.gain(0, 1.0f - p_filterEgInt);
+    filterEgRAmpMixer.gain(0, p_filterEgInt);
+    lpfR.frequency(p_filterCutoff);
+    lpfR.resonance(p_filterResonance);
+    lpfR.octaveControl(p_filterOctaveControl);
+
+    filterLMixer.gain(0, 0.5f);
+    filterRMixer.gain(1, 0.5f);
+
+    // amp
+    ampEgL.attack(p_ampEgAttack);
+    ampEgL.decay(p_ampEgDecay);
+    ampEgL.sustain(p_ampEgSustain);
+    ampEgL.release(p_ampEgRelease);
+
+    ampEgR.attack(p_ampEgAttack);
+    ampEgR.decay(p_ampEgDecay);
+    ampEgR.sustain(p_ampEgSustain);
+    ampEgR.release(p_ampEgRelease);
 }
+
+////////////
+//  LOOP  //
+////////////
 
 void loop() {
     float amplitude = analogRead(A1) / 1023.0f;
