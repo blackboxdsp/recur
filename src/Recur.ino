@@ -205,26 +205,26 @@ void initComponents() {
 
     // delay
     delayL.delay(0, p_delayTime);
-    delayL.delay(1, p_delayTime * 0.5f);
-    delayL.delay(2, p_delayTime * 2.0f);
+    delayL.delay(1, p_delayTime);
+    delayL.delay(2, p_delayTime);
     oscL01.begin(1.0f, p_delayOscFrequency * 0.98f, WAVEFORM_SINE);
     oscL02.begin(1.0f, p_delayOscFrequency * 1.02f, WAVEFORM_SINE);
     combineL.setCombineMode(s_delayCombineMode);
     mixerL.gain(0, 0.5f);
     mixerL.gain(1, 0.24f);
-    mixerL.gain(2, 0.18f);
-    mixerL.gain(3, 0.08f);
+    mixerL.gain(2, 0.36f);
+    mixerL.gain(3, 0.16f);
 
     delayR.delay(0, p_delayTime);
-    delayR.delay(1, p_delayTime * 0.5f);
-    delayR.delay(2, p_delayTime * 2.0f);
+    delayR.delay(1, p_delayTime);
+    delayR.delay(2, p_delayTime);
     oscR01.begin(1.0f, p_delayOscFrequency * 1.02f, WAVEFORM_SINE);
     oscR02.begin(1.0f, p_delayOscFrequency * 0.98f, WAVEFORM_SINE);
     combineR.setCombineMode(s_delayCombineMode);
     mixerR.gain(0, 0.5f);
     mixerR.gain(1, 0.24f);
-    mixerR.gain(2, 0.18f);
-    mixerR.gain(3, 0.08f);
+    mixerR.gain(2, 0.36f);
+    mixerR.gain(3, 0.16f);
 
     // filter
     dc.amplitude(1.0f);
@@ -305,21 +305,21 @@ void processDelay(int timeIn, int feedbackIn) {
     float timeScaled = timeIn / 1023.0f;
     p_delayTime = (timeScaled * 120.0f) + 12.0f;
     delayL.delay(0, p_delayTime);
-    delayL.delay(1, p_delayTime * 0.5f);
-    delayL.delay(2, p_delayTime * 2.0f);
+    delayL.delay(1, p_delayTime);
+    delayL.delay(2, p_delayTime);
     delayR.delay(0, p_delayTime);
-    delayR.delay(1, p_delayTime * 0.5f);
-    delayR.delay(2, p_delayTime * 2.0f);
+    delayR.delay(1, p_delayTime);
+    delayR.delay(2, p_delayTime);
 
     float feedbackScaled = feedbackIn / 1023.0f;
-    mixerL.gain(0, 1.0f + (0.5f * -feedbackScaled));
+    mixerL.gain(0, 1.0f + (0.76f * -feedbackScaled));
     mixerL.gain(1, 0.24f * feedbackScaled);
-    mixerL.gain(2, 0.18f * feedbackScaled);
-    mixerL.gain(3, 0.08f * feedbackScaled);
-    mixerR.gain(0, 1.0f + (0.5f * -feedbackScaled));
+    mixerL.gain(2, 0.36f * feedbackScaled);
+    mixerL.gain(3, 0.16f * feedbackScaled);
+    mixerR.gain(0, 1.0f + (0.76f * -feedbackScaled));
     mixerR.gain(1, 0.24f * feedbackScaled);
-    mixerR.gain(2, 0.18f * feedbackScaled);
-    mixerR.gain(3, 0.08f * feedbackScaled);
+    mixerR.gain(2, 0.36f * feedbackScaled);
+    mixerR.gain(3, 0.16f * feedbackScaled);
 }
 
 void processFilter(int cutoffIn) {
