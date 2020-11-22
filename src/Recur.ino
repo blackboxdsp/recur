@@ -113,18 +113,24 @@ AudioControlSGTL5000     control;
 // constants
 const int AUDIO_MEMORY = 204;
 
-// potentimoeters
+// NOTE: p_varName denotes variables with a corresponding potentiometer
+// NOTE: s_varName denotes variables with a corresponding switch (2 or 3-way)
+
+// potentimoeters (+ values)
 const int OSC_FREQUENCY_POT = A7;
-float p_oscFrequency = 110.0f;
+float p_oscFrequency = 55.0f;
 float p_osc01Gain = 0.5f;
 float p_osc02Gain = 0.5f;
 
+const char *SAMPLER_FILENAME = "gnd-wrk.wav";
+
+const int DELAY_OSC_FREQUENCY_POT = A7;
 float p_delayOscFrequency = 220.0f;
 const int DELAY_TIME_POT = A6; 
 float p_delayTime = 60.0f; 
+float previousDelayTime = 60.0f;
 const int DELAY_FEEDBACK_POT = A3;
 float p_delayFeedback = 0.0f;
-
 
 const int FILTER_CUTOFF_POT = A2;
 float p_filterEgAttack = 10.0f;
@@ -141,12 +147,22 @@ float p_ampEgDecay = 120.0f;
 float p_ampEgSustain = 0.4f;
 float p_ampEgRelease = 240.0f;
 
-// switches
+const int MIXER_AMP_POT = A1;
+float p_mixerAmp = 1.0f;
+
+// switches (+ values)
 int s_osc01Waveform = 1;
 int s_osc02Waveform = 3;
 float s_oscMultiplier = 1.0f;
 
 int s_delayCombineMode = 1;
+
+enum MixerMode {
+    MIXER_OSC = 0,
+    MIXER_LINE_IN = 1,
+    MIXER_SAMPLER = 2
+};
+MixerMode s_mixerMode = MIXER_SAMPLER;
 
 // buttons
 const int TRIG_BUTTON_PIN = 0;
@@ -160,7 +176,7 @@ void setup() {
     Serial.begin(9600);
     
     initAudio();
-    //initSdCard();
+    initSdCard();
     
     delay(1000);
     
@@ -168,6 +184,9 @@ void setup() {
     initComponents();
 }
 
+/*
+Initialize Teensy board for number of audio blocks and SGTL5000 enabling.
+*/
 void initAudio() {
     AudioMemory(AUDIO_MEMORY);
     
@@ -175,6 +194,9 @@ void initAudio() {
     control.volume(0.75f);
 }
 
+/*
+ * Initialize communications with the SD card.
+ */
 void initSdCard() {
     SPI.setMOSI(SDCARD_MOSI_PIN);
     SPI.setSCK(SDCARD_SCK_PIN);
@@ -186,6 +208,9 @@ void initSdCard() {
     }
 }
 
+/*
+ * Initialize all controls (buttons, pots, switches, etc.) as needed.
+ */
 void initControls() {
     // potentiometers
 
@@ -195,36 +220,46 @@ void initControls() {
     pinMode(TRIG_BUTTON_PIN, INPUT_PULLUP);
 }
 
+/*
+ * Initialize all audio components declared in sketch with default settings.
+ */
 void initComponents() {
     // oscillator
     osc01.begin(1.0f, p_oscFrequency, s_osc01Waveform);
     osc02.begin(1.0f, p_oscFrequency, s_osc02Waveform);
     oscMixer.gain(0, p_osc01Gain);
     oscMixer.gain(1, p_osc02Gain);
-    mixer.gain(0, 1.0f);
+
+    inputMixer.gain(0, 0.5f);
+    inputMixer.gain(1, 0.5f);
+
+    samplerMixer.gain(0, 0.5f);
+    samplerMixer.gain(1, 0.5f);
+
+    processMixerInputs((int) s_mixerMode);
 
     // delay
     delayL.delay(0, p_delayTime);
     delayL.delay(1, p_delayTime);
     delayL.delay(2, p_delayTime);
-    oscL01.begin(1.0f, p_delayOscFrequency * 0.98f, WAVEFORM_SINE);
-    oscL02.begin(1.0f, p_delayOscFrequency * 1.02f, WAVEFORM_SINE);
+    oscL01.begin(1.0f, p_delayOscFrequency, WAVEFORM_SINE);
+    oscL02.begin(1.0f, p_delayOscFrequency * 0.25f, WAVEFORM_SINE);
     combineL.setCombineMode(s_delayCombineMode);
-    mixerL.gain(0, 0.5f);
-    mixerL.gain(1, 0.24f);
-    mixerL.gain(2, 0.36f);
-    mixerL.gain(3, 0.16f);
+    mixerL.gain(0, 1.0f);
+    mixerL.gain(1, 0.0f);
+    mixerL.gain(2, 0.0f);
+    mixerL.gain(3, 0.0f);
 
     delayR.delay(0, p_delayTime);
     delayR.delay(1, p_delayTime);
     delayR.delay(2, p_delayTime);
-    oscR01.begin(1.0f, p_delayOscFrequency * 1.02f, WAVEFORM_SINE);
-    oscR02.begin(1.0f, p_delayOscFrequency * 0.98f, WAVEFORM_SINE);
+    oscR01.begin(1.0f, p_delayOscFrequency, WAVEFORM_SINE);
+    oscR02.begin(1.0f, p_delayOscFrequency * 0.25f, WAVEFORM_SINE);
     combineR.setCombineMode(s_delayCombineMode);
-    mixerR.gain(0, 0.5f);
-    mixerR.gain(1, 0.24f);
-    mixerR.gain(2, 0.36f);
-    mixerR.gain(3, 0.16f);
+    mixerR.gain(0, 1.0f);
+    mixerR.gain(1, 0.0f);
+    mixerR.gain(2, 0.0f);
+    mixerR.gain(3, 0.0f);
 
     // filter
     dc.amplitude(1.0f);
@@ -246,9 +281,9 @@ void initComponents() {
     lpfR.resonance(p_filterResonance);
     lpfR.octaveControl(p_filterOctaveControl);
 
-    filterLMixer.gain(0, 0.5f);
+    filterLMixer.gain(0, 1.0f);
     filterLMixer.gain(1, 0.0f);
-    filterRMixer.gain(0, 0.5f);
+    filterRMixer.gain(0, 1.0f);
     filterRMixer.gain(1, 0.0f);
 
     // amp
@@ -270,12 +305,16 @@ void initComponents() {
 void loop() {
     checkTrigButton();
 
-    processOsc(analogRead(OSC_FREQUENCY_POT));
-    processDelay(analogRead(DELAY_TIME_POT), analogRead(DELAY_FEEDBACK_POT));
+    processMixer();
+    processDelay(analogRead(DELAY_TIME_POT), analogRead(DELAY_FEEDBACK_POT), analogRead(DELAY_OSC_FREQUENCY_POT));
     processFilter(analogRead(FILTER_CUTOFF_POT));
-    processAmp(analogRead(A1));
+    processAmp(analogRead(MIXER_AMP_POT));
 }
 
+/*
+ * Checks if trigger button pressed and triggers noteOn / noteOff
+ * for the envelope generators accordingly.
+ */
 void checkTrigButton() {
     trigButton.update();
     if(trigButton.fallingEdge()) {
@@ -291,47 +330,131 @@ void checkTrigButton() {
     }
 }
 
+/*
+ * Update mixer inputs and sound generators according to the mixer mode.
+ */
+void processMixer() {
+    processMixerInputs((int) s_mixerMode);
+
+    switch(s_mixerMode) {
+        default:
+        case MIXER_OSC:
+            processOsc(analogRead(OSC_FREQUENCY_POT));
+            break;
+        case MIXER_LINE_IN:
+            processSampler();
+            break;
+        case MIXER_SAMPLER:
+            // TODO
+            break;
+
+    }
+}
+
+/*
+ * Updates mixer inputs to open the active channel and close the others.
+
+ * @param activeChannel number (int) of active channel
+ */
+void processMixerInputs(int activeChannel) {
+    for(int i = 0; i < 4; i++) {
+        if(i == activeChannel) {
+            mixer.gain(i, 1.0f);
+        } else {
+            mixer.gain(i, 0.0f);
+        }
+    }
+}
+
+/*
+ * Update oscillator's frequency, waveform, and octave multiplier.
+
+ * @param freqIn analog reading of OSC_FREQUENCY_POT
+ */
 void processOsc(int freqIn) {
     float scaled = freqIn / 1023.0f;
-    p_oscFrequency = 20.0f + (scaled * 520.0f);
+    p_oscFrequency = 20.0f + (2000.0f * scaled);
+
+    p_oscFrequency = 55.0f; // DELETE LATER (when more pots)
+
     p_oscFrequency *= s_oscMultiplier;
 
     osc01.frequency(p_oscFrequency);
     osc02.frequency(p_oscFrequency);
 }
 
-void processDelay(int timeIn, int feedbackIn) {
-    // CAUTION: Maximum delay time is at 449.39ms for Teensy 3.2 @ (2.9ms / mem block)
-    float timeScaled = timeIn / 1023.0f;
-    p_delayTime = (timeScaled * 120.0f) + 12.0f;
-    delayL.delay(0, p_delayTime);
-    delayL.delay(1, p_delayTime);
-    delayL.delay(2, p_delayTime);
-    delayR.delay(0, p_delayTime);
-    delayR.delay(1, p_delayTime);
-    delayR.delay(2, p_delayTime);
-
-    float feedbackScaled = feedbackIn / 1023.0f;
-    mixerL.gain(0, 1.0f + (0.76f * -feedbackScaled));
-    mixerL.gain(1, 0.24f * feedbackScaled);
-    mixerL.gain(2, 0.36f * feedbackScaled);
-    mixerL.gain(3, 0.16f * feedbackScaled);
-    mixerR.gain(0, 1.0f + (0.76f * -feedbackScaled));
-    mixerR.gain(1, 0.24f * feedbackScaled);
-    mixerR.gain(2, 0.36f * feedbackScaled);
-    mixerR.gain(3, 0.16f * feedbackScaled);
+/*
+ * Continuously play the specified sample's wav file.
+ */
+void processSampler() {
+    if(!sampler.isPlaying()) {
+        Serial.println("PLAYING");
+        sampler.play(SAMPLER_FILENAME);
+        delay(1);
+    }
 }
 
+/*
+ * Update the delay's time, feedback, oscillator frequency, and combine mode.
+ * Do NOT change delay settings too quickly. Do NOT make delay
+ * times greater than 449.39ms (1 block = 2.9ms).
+
+ * @param timeIn analog reading of DELAY_TIME_POT
+ * @param feedbackIn analog reading of DELAY_FEEDBACK_POT
+ * @param frequencyIn analog reading of DELAY_OSC_FREQUENCY_POT
+ */
+void processDelay(int timeIn, int feedbackIn, int frequencyIn) {
+    float timeScaled = timeIn / 1023.0f;
+    p_delayTime = 12.0f + (212.0f * timeScaled);
+    if(p_delayTime - previousDelayTime > 0.1f) {
+        previousDelayTime = p_delayTime;
+
+        delayL.delay(0, p_delayTime);
+        delayL.delay(1, p_delayTime);
+        delayL.delay(2, p_delayTime);
+        delayR.delay(0, p_delayTime);
+        delayR.delay(1, p_delayTime);
+        delayR.delay(2, p_delayTime);
+    }
+
+    p_delayFeedback = feedbackIn / 1023.0f;
+    mixerL.gain(0, 1.0f + (0.75f * -p_delayFeedback));
+    mixerL.gain(1, 0.25f * p_delayFeedback);
+    mixerL.gain(2, 0.25f * p_delayFeedback);
+    mixerL.gain(3, 0.25f * p_delayFeedback);
+    mixerR.gain(0, 1.0f + (0.75f * -p_delayFeedback));
+    mixerR.gain(1, 0.25f * p_delayFeedback);
+    mixerR.gain(2, 0.25f * p_delayFeedback);
+    mixerR.gain(3, 0.25f * p_delayFeedback);
+
+    float frequencyScaled = frequencyIn / 1023.0f;
+    p_delayOscFrequency = 20.0f + (20000.0f * frequencyScaled);
+    oscL01.frequency(p_delayOscFrequency);
+    oscL02.frequency(p_delayOscFrequency * 0.25f);
+    oscR01.frequency(p_delayOscFrequency);
+    oscR02.frequency(p_delayOscFrequency * 0.25f);
+}
+
+/*
+ * Update the filter's cutoff frequency, resonance, envelope intensity, and octave control.
+
+ * @param cutoffIn analog reading of FILTER_CUTOFF_POT
+ */
 void processFilter(int cutoffIn) {
     float scaled = cutoffIn / 1023.0f;
-    p_filterCutoff = 20.0f + (scaled * 20000.0f);
+    p_filterCutoff = 20.0f + (20000.0f * scaled);
 
     lpfL.frequency(p_filterCutoff);
     lpfR.frequency(p_filterCutoff);
 }
 
-void processAmp(int ampIn) {
-    float amplitude = ampIn / 1023.0f;
+/*
+ * Update the amplifier's level.
 
-    control.volume(amplitude);
+ * @param ampIn analog reading of 
+ */
+void processAmp(int ampIn) {
+    p_mixerAmp = ampIn / 1023.0f;
+
+    control.volume(p_mixerAmp);
 }
