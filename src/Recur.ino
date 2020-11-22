@@ -10,53 +10,37 @@
 #include <SD.h>
 #include <SerialFlash.h>
 
-// oscillator
-AudioSynthWaveform       osc01;   
-AudioSynthWaveform       osc02;  
-AudioMixer4              oscMixer;
-AudioInputI2S            input;         
-AudioMixer4              inputMixer;
-AudioPlaySdWav           sampler;  
-AudioMixer4              samplerMixer;
-AudioMixer4              mixer;
-
-// delay
-AudioEffectDelay         delayL;       
-AudioEffectDelay         delayR;        
-AudioMixer4              mixerL;       
-AudioMixer4              mixerR;     
-AudioSynthWaveform       oscL02;        
-AudioSynthWaveform       oscL01;      
-AudioEffectRectifier     rectifyL; 
-AudioEffectMultiply      multiplyL;    
-AudioEffectDigitalCombine combineL;     
-AudioSynthWaveform       oscR01;        
-AudioSynthWaveform       oscR02;       
-AudioEffectRectifier     rectifyR;     
-AudioEffectMultiply      multiplyR; 
-AudioEffectDigitalCombine combineR;
-
-// filter
-AudioSynthWaveformDc     dc;          
-AudioEffectEnvelope      filterEgL;   
-AudioAmplifier           filterEgLAmp;        
-AudioFilterStateVariable lpfL;      
-AudioFilterStateVariable hpfL;
-AudioMixer4              filterLMixer;   
-AudioEffectEnvelope      filterEgR; 
-AudioAmplifier           filterEgRAmp; 
-AudioFilterStateVariable lpfR;
-AudioFilterStateVariable hpfR;
-AudioMixer4              filterRMixer;
-
-// amp
-AudioEffectEnvelope      ampEgL;   
-AudioEffectEnvelope      ampEgR; 
-
-// output
-AudioOutputI2S           output;      
-
-// patching
+// GUItool: begin automatically generated code
+AudioSynthWaveform       osc02;  //xy=88,255
+AudioInputI2S            input;           //xy=88,329
+AudioPlaySdWav           sampler;     //xy=88,442
+AudioSynthWaveform       osc01;      //xy=91,202
+AudioMixer4              oscMixer; //xy=256,222
+AudioMixer4              inputMixer;         //xy=260,342
+AudioMixer4              samplerMixer; //xy=270,453
+AudioMixer4              mixer;         //xy=419,349
+AudioSynthWaveformModulated modL; //xy=733,286
+AudioSynthWaveformModulated modR;   //xy=736,425
+AudioMixer4              mixerL; //xy=948,293
+AudioMixer4              mixerR;         //xy=960.4999771118164,414.49999618530273
+AudioEffectDelay         delayR;         //xy=1199,526
+AudioEffectDelay         delayL; //xy=1207,187
+AudioAmplifier           delayAmpR; //xy=1214,617
+AudioAmplifier           delayAmpL;           //xy=1221,96
+AudioSynthWaveformDc     dc;            //xy=1447,366
+AudioEffectEnvelope      filterEgR; //xy=1611,554
+AudioEffectEnvelope      filterEgL;      //xy=1617,194
+AudioAmplifier           filterEgRAmp; //xy=1773,553
+AudioAmplifier           filterEgLAmp;           //xy=1780,194
+AudioFilterStateVariable hpfR; //xy=1958,442
+AudioFilterStateVariable lpfR; //xy=1961,503
+AudioFilterStateVariable hpfL; //xy=1962,300
+AudioFilterStateVariable lpfL;        //xy=1964,237
+AudioMixer4              filterRMixer; //xy=2185,462
+AudioMixer4              filterLMixer;         //xy=2187,265
+AudioEffectEnvelope      ampEgR; //xy=2561,462
+AudioEffectEnvelope      ampEgL;      //xy=2564,265
+AudioOutputI2S           output;         //xy=2804,360
 AudioConnection          patchCord1(osc02, 0, oscMixer, 1);
 AudioConnection          patchCord2(input, 0, inputMixer, 0);
 AudioConnection          patchCord3(input, 1, inputMixer, 1);
@@ -66,52 +50,49 @@ AudioConnection          patchCord6(osc01, 0, oscMixer, 0);
 AudioConnection          patchCord7(oscMixer, 0, mixer, 0);
 AudioConnection          patchCord8(inputMixer, 0, mixer, 1);
 AudioConnection          patchCord9(samplerMixer, 0, mixer, 2);
-AudioConnection          patchCord10(mixer, 0, mixerL, 0);
-AudioConnection          patchCord11(mixer, 0, mixerR, 0);
-AudioConnection          patchCord12(delayL, 0, multiplyL, 1);
-AudioConnection          patchCord13(delayL, 1, combineL, 1);
-AudioConnection          patchCord14(delayL, 2, rectifyL, 0);
-AudioConnection          patchCord15(delayR, 0, multiplyR, 1);
-AudioConnection          patchCord16(delayR, 1, combineR, 1);
-AudioConnection          patchCord17(delayR, 2, rectifyR, 0);
+AudioConnection          patchCord10(mixer, 0, mixerR, 0);
+AudioConnection          patchCord11(mixer, 0, mixerL, 0);
+AudioConnection          patchCord12(mixer, 0, modL, 0);
+AudioConnection          patchCord13(mixer, 0, modR, 0);
+AudioConnection          patchCord14(modL, 0, mixerL, 1);
+AudioConnection          patchCord15(modL, delayL);
+AudioConnection          patchCord16(modR, 0, mixerR, 1);
+AudioConnection          patchCord17(modR, delayR);
 AudioConnection          patchCord18(mixerL, delayL);
 AudioConnection          patchCord19(mixerL, 0, lpfL, 0);
 AudioConnection          patchCord20(mixerL, 0, hpfL, 0);
-AudioConnection          patchCord21(mixerR, delayR);
-AudioConnection          patchCord22(mixerR, 0, lpfR, 0);
-AudioConnection          patchCord23(mixerR, 0, hpfR, 0);
-AudioConnection          patchCord24(oscL02, 0, combineL, 0);
-AudioConnection          patchCord25(oscL01, 0, multiplyL, 0);
-AudioConnection          patchCord26(rectifyL, 0, mixerL, 3);
-AudioConnection          patchCord27(multiplyL, 0, mixerL, 1);
-AudioConnection          patchCord28(combineL, 0, mixerR, 2);
-AudioConnection          patchCord29(oscR01, 0, multiplyR, 0);
-AudioConnection          patchCord30(oscR02, 0, combineR, 0);
-AudioConnection          patchCord31(rectifyR, 0, mixerR, 3);
-AudioConnection          patchCord32(multiplyR, 0, mixerR, 1);
-AudioConnection          patchCord33(combineR, 0, mixerL, 2);
-AudioConnection          patchCord34(dc, filterEgL);
-AudioConnection          patchCord35(dc, filterEgR);
-AudioConnection          patchCord36(filterEgL, filterEgLAmp);
-AudioConnection          patchCord37(filterEgR, filterEgRAmp);
+AudioConnection          patchCord21(mixerR, 0, lpfR, 0);
+AudioConnection          patchCord22(mixerR, 0, hpfR, 0);
+AudioConnection          patchCord23(mixerR, delayR);
+AudioConnection          patchCord24(delayR, 0, delayAmpR, 0);
+AudioConnection          patchCord25(delayL, 0, delayAmpL, 0);
+AudioConnection          patchCord26(delayAmpR, 0, mixerR, 2);
+AudioConnection          patchCord27(delayAmpR, 0, hpfR, 0);
+AudioConnection          patchCord28(delayAmpR, 0, lpfR, 0);
+AudioConnection          patchCord29(delayAmpL, 0, mixerL, 2);
+AudioConnection          patchCord30(delayAmpL, 0, lpfL, 0);
+AudioConnection          patchCord31(delayAmpL, 0, hpfL, 0);
+AudioConnection          patchCord32(dc, filterEgL);
+AudioConnection          patchCord33(dc, filterEgR);
+AudioConnection          patchCord34(filterEgR, filterEgRAmp);
+AudioConnection          patchCord35(filterEgL, filterEgLAmp);
+AudioConnection          patchCord36(filterEgRAmp, 0, lpfR, 1);
+AudioConnection          patchCord37(filterEgRAmp, 0, hpfR, 1);
 AudioConnection          patchCord38(filterEgLAmp, 0, lpfL, 1);
 AudioConnection          patchCord39(filterEgLAmp, 0, hpfL, 1);
-AudioConnection          patchCord40(filterEgRAmp, 0, lpfR, 1);
-AudioConnection          patchCord41(filterEgRAmp, 0, hpfR, 1);
-AudioConnection          patchCord42(lpfR, 0, filterRMixer, 0);
+AudioConnection          patchCord40(hpfR, 2, filterRMixer, 1);
+AudioConnection          patchCord41(lpfR, 0, filterRMixer, 0);
+AudioConnection          patchCord42(hpfL, 2, filterLMixer, 1);
 AudioConnection          patchCord43(lpfL, 0, filterLMixer, 0);
-AudioConnection          patchCord44(hpfR, 2, filterRMixer, 1);
-AudioConnection          patchCord45(hpfL, 2, filterLMixer, 1);
-AudioConnection          patchCord46(filterLMixer, ampEgL);
-AudioConnection          patchCord47(filterRMixer, ampEgR);
-AudioConnection          patchCord48(ampEgR, 0, output, 1);
-AudioConnection          patchCord49(ampEgL, 0, output, 0);
-
-// SGTL5000
-AudioControlSGTL5000     control;
+AudioConnection          patchCord44(filterRMixer, ampEgR);
+AudioConnection          patchCord45(filterLMixer, ampEgL);
+AudioConnection          patchCord46(ampEgR, 0, output, 1);
+AudioConnection          patchCord47(ampEgL, 0, output, 0);
+AudioControlSGTL5000     control;        //xy=83,48
+// GUItool: end automatically generated code
 
 // constants
-const int AUDIO_MEMORY = 204;
+const int AUDIO_MEMORY = 192;
 
 // NOTE: p_varName denotes variables with a corresponding potentiometer
 // NOTE: s_varName denotes variables with a corresponding switch (2 or 3-way)
@@ -124,12 +105,17 @@ float p_osc02Gain = 0.5f;
 
 const char *SAMPLER_FILENAME = "gnd-wrk.wav";
 
-const int DELAY_OSC_FREQUENCY_POT = A7;
-float p_delayOscFrequency = 220.0f;
-const int DELAY_TIME_POT = A6; 
+const int MOD_FREQUENCY_POT = A2;
+float p_modFrequency = 520.0f;
+const int MOD_DEPTH_POT = A7;
+float p_modDepth = 0.0f;
+const int MOD_PHASE_POT = A6;
+float p_modPhase = 0.0f;
+
+const int DELAY_TIME_POT = A3; 
 float p_delayTime = 60.0f; 
-float previousDelayTime = 60.0f;
-const int DELAY_FEEDBACK_POT = A3;
+float previousDelayTime = p_delayTime;
+const int DELAY_FEEDBACK_POT = A2;
 float p_delayFeedback = 0.0f;
 
 const int FILTER_CUTOFF_POT = A2;
@@ -137,7 +123,7 @@ float p_filterEgAttack = 10.0f;
 float p_filterEgDecay = 120.0f;
 float p_filterEgSustain = 0.4f;
 float p_filterEgRelease = 240.0f;
-float p_filterCutoff = 320.0f;
+float p_filterCutoff = 20000.0f;
 float p_filterResonance = 1.4f;
 float p_filterOctaveControl = 3.6f;
 float p_filterEgInt = 0.0f;
@@ -155,14 +141,14 @@ int s_osc01Waveform = 1;
 int s_osc02Waveform = 3;
 float s_oscMultiplier = 1.0f;
 
-int s_delayCombineMode = 1;
+int s_modWaveform = 2;
 
 enum MixerMode {
     MIXER_OSC = 0,
     MIXER_LINE_IN = 1,
     MIXER_SAMPLER = 2
 };
-MixerMode s_mixerMode = MIXER_SAMPLER;
+MixerMode s_mixerMode = MIXER_OSC;
 
 // buttons
 const int TRIG_BUTTON_PIN = 0;
@@ -238,28 +224,30 @@ void initComponents() {
 
     processMixerInputs((int) s_mixerMode);
 
+    // mod
+    modL.begin(p_modDepth, p_modFrequency, s_modWaveform);    
+    modL.phaseModulation(0.0f);
+
+    modR.begin(p_modDepth, p_modFrequency, s_modWaveform);
+    modR.phaseModulation(0.0f);
+
     // delay
     delayL.delay(0, p_delayTime);
-    delayL.delay(1, p_delayTime);
-    delayL.delay(2, p_delayTime);
-    oscL01.begin(1.0f, p_delayOscFrequency, WAVEFORM_SINE);
-    oscL02.begin(1.0f, p_delayOscFrequency * 0.25f, WAVEFORM_SINE);
-    combineL.setCombineMode(s_delayCombineMode);
-    mixerL.gain(0, 1.0f);
-    mixerL.gain(1, 0.0f);
-    mixerL.gain(2, 0.0f);
-    mixerL.gain(3, 0.0f);
+    delayL.delay(1, 0.25f * p_delayTime);
+    delayAmpL.gain(p_delayFeedback);
 
     delayR.delay(0, p_delayTime);
-    delayR.delay(1, p_delayTime);
-    delayR.delay(2, p_delayTime);
-    oscR01.begin(1.0f, p_delayOscFrequency, WAVEFORM_SINE);
-    oscR02.begin(1.0f, p_delayOscFrequency * 0.25f, WAVEFORM_SINE);
-    combineR.setCombineMode(s_delayCombineMode);
-    mixerR.gain(0, 1.0f);
-    mixerR.gain(1, 0.0f);
-    mixerR.gain(2, 0.0f);
-    mixerR.gain(3, 0.0f);
+    delayR.delay(1, 0.25f * p_delayTime);
+    delayAmpR.gain(p_delayFeedback);
+
+    // mixing (mod + delay)
+    mixerL.gain(0, 0.5f);
+    mixerL.gain(1, 0.5f);
+    mixerL.gain(2, 0.5f);
+
+    mixerL.gain(0, 0.5f);
+    mixerL.gain(1, 0.5f);
+    mixerL.gain(2, 0.5f);
 
     // filter
     dc.amplitude(1.0f);
@@ -306,7 +294,8 @@ void loop() {
     checkTrigButton();
 
     processMixer();
-    processDelay(analogRead(DELAY_TIME_POT), analogRead(DELAY_FEEDBACK_POT), analogRead(DELAY_OSC_FREQUENCY_POT));
+    processMod(analogRead(MOD_FREQUENCY_POT), analogRead(MOD_DEPTH_POT), analogRead(MOD_PHASE_POT));
+    processDelay(analogRead(DELAY_TIME_POT), analogRead(DELAY_FEEDBACK_POT));
     processFilter(analogRead(FILTER_CUTOFF_POT));
     processAmp(analogRead(MIXER_AMP_POT));
 }
@@ -371,8 +360,8 @@ void processMixerInputs(int activeChannel) {
 
  * @param freqIn analog reading of OSC_FREQUENCY_POT
  */
-void processOsc(int freqIn) {
-    float scaled = freqIn / 1023.0f;
+void processOsc(int frequencyIn) {
+    float scaled = frequencyIn / 1023.0f;
     p_oscFrequency = 20.0f + (2000.0f * scaled);
 
     p_oscFrequency = 55.0f; // DELETE LATER (when more pots)
@@ -387,11 +376,34 @@ void processOsc(int freqIn) {
  * Continuously play the specified sample's wav file.
  */
 void processSampler() {
+    Serial.println("Trying to play sample...");
     if(!sampler.isPlaying()) {
         Serial.println("PLAYING");
         sampler.play(SAMPLER_FILENAME);
         delay(1);
     }
+}
+
+/*
+ *
+ * 
+ */
+void processMod(int frequencyIn, int depthIn, int phaseIn) {
+    float freqScaled = frequencyIn / 1023.0f;
+    p_modFrequency = 0.00000001f + (10000.0f * freqScaled);
+    p_modFrequency = 520.0f;
+    modL.frequency(p_modFrequency);
+    modR.frequency(p_modFrequency);
+
+    p_modDepth = depthIn / 1023.0f;
+    delay(50);
+    modL.amplitude(p_modDepth);
+    modR.amplitude(p_modDepth);
+
+    float phaseScaled = phaseIn / 1023.0f;
+    p_modPhase = 180.0f * phaseScaled;
+    modL.phaseModulation(p_modPhase);
+    modR.phaseModulation(p_modPhase);
 }
 
 /*
@@ -403,36 +415,21 @@ void processSampler() {
  * @param feedbackIn analog reading of DELAY_FEEDBACK_POT
  * @param frequencyIn analog reading of DELAY_OSC_FREQUENCY_POT
  */
-void processDelay(int timeIn, int feedbackIn, int frequencyIn) {
+void processDelay(int timeIn, int feedbackIn) {
     float timeScaled = timeIn / 1023.0f;
-    p_delayTime = 12.0f + (212.0f * timeScaled);
-    if(p_delayTime - previousDelayTime > 0.1f) {
+    p_delayTime = 10.0f + (170.0f * timeScaled);
+    if(abs(p_delayTime - previousDelayTime) > 0.3f) {
         previousDelayTime = p_delayTime;
-
         delayL.delay(0, p_delayTime);
-        delayL.delay(1, p_delayTime);
-        delayL.delay(2, p_delayTime);
+        delayL.delay(1, 0.25f * p_delayTime);
+
         delayR.delay(0, p_delayTime);
-        delayR.delay(1, p_delayTime);
-        delayR.delay(2, p_delayTime);
+        delayR.delay(1, 0.25f * p_delayTime);
     }
 
     p_delayFeedback = feedbackIn / 1023.0f;
-    mixerL.gain(0, 1.0f + (0.75f * -p_delayFeedback));
-    mixerL.gain(1, 0.25f * p_delayFeedback);
-    mixerL.gain(2, 0.25f * p_delayFeedback);
-    mixerL.gain(3, 0.25f * p_delayFeedback);
-    mixerR.gain(0, 1.0f + (0.75f * -p_delayFeedback));
-    mixerR.gain(1, 0.25f * p_delayFeedback);
-    mixerR.gain(2, 0.25f * p_delayFeedback);
-    mixerR.gain(3, 0.25f * p_delayFeedback);
-
-    float frequencyScaled = frequencyIn / 1023.0f;
-    p_delayOscFrequency = 20.0f + (20000.0f * frequencyScaled);
-    oscL01.frequency(p_delayOscFrequency);
-    oscL02.frequency(p_delayOscFrequency * 0.25f);
-    oscR01.frequency(p_delayOscFrequency);
-    oscR02.frequency(p_delayOscFrequency * 0.25f);
+    delayAmpL.gain(p_delayFeedback);
+    delayAmpR.gain(p_delayFeedback);
 }
 
 /*
@@ -443,6 +440,8 @@ void processDelay(int timeIn, int feedbackIn, int frequencyIn) {
 void processFilter(int cutoffIn) {
     float scaled = cutoffIn / 1023.0f;
     p_filterCutoff = 20.0f + (20000.0f * scaled);
+    
+    p_filterCutoff = 1200.0f; // CHANGE LATER
 
     lpfL.frequency(p_filterCutoff);
     lpfR.frequency(p_filterCutoff);
