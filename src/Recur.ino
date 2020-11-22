@@ -159,10 +159,10 @@ void setup() {
 }
 
 void initAudio() {
-    AudioMemory(8);
+    AudioMemory(32);
     
     control.enable();
-    control.volume(0.75);
+    control.volume(0.75f);
 }
 
 void initSdCard() {
@@ -241,6 +241,19 @@ void initComponents() {
 ////////////
 
 void loop() {
+    trigButton.update();
+    if(trigButton.fallingEdge()) {
+        filterEgL.noteOn();
+        filterEgR.noteOn();
+        ampEgL.noteOn();
+        ampEgR.noteOn();
+    } else if(trigButton.risingEdge()) {
+        filterEgL.noteOff();
+        filterEgR.noteOff();
+        ampEgL.noteOff();
+        ampEgR.noteOff();
+    }
+
     float amplitude = analogRead(A1) / 1023.0f;
     control.volume(amplitude);
 }
