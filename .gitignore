@@ -6,3 +6,6 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+
+# Other files
+*.ino.cpp
