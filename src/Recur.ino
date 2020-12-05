@@ -42,6 +42,8 @@ AudioMixer4              filterRMixer; //xy=2185,462
 AudioMixer4              filterLMixer;         //xy=2187,265
 AudioEffectEnvelope      ampEgR; //xy=2561,462
 AudioEffectEnvelope      ampEgL;      //xy=2564,265
+AudioAmplifier           ampEgRAmp; //xy=2618,463
+AudioAmplifier           ampEgLAmp;           //xy=2623,266
 AudioOutputI2S           output;         //xy=2804,360
 AudioConnection          patchCord1(osc02, 0, oscMixer, 1);
 AudioConnection          patchCord2(input, 0, inputMixer, 0);
@@ -86,11 +88,13 @@ AudioConnection          patchCord40(hpfR, 2, filterRMixer, 1);
 AudioConnection          patchCord41(lpfR, 0, filterRMixer, 0);
 AudioConnection          patchCord42(hpfL, 2, filterLMixer, 1);
 AudioConnection          patchCord43(lpfL, 0, filterLMixer, 0);
-AudioConnection          patchCord44(filterRMixer, ampEgR);
-AudioConnection          patchCord45(filterLMixer, ampEgL);
-AudioConnection          patchCord46(ampEgR, 0, output, 1);
-AudioConnection          patchCord47(ampEgL, 0, output, 0);
-AudioControlSGTL5000     control;        //xy=83,48
+AudioConnection          patchCord46(filterRMixer, ampEgR);
+AudioConnection          patchCord47(filterLMixer, ampEgL);
+AudioConnection          patchCord48(ampEgL, ampEgLAmp);
+AudioConnection          patchCord49(ampEgR, ampEgRAmp);
+AudioConnection          patchCord50(ampEgRAmp, 0, output, 1);
+AudioConnection          patchCord51(ampEgLAmp, 0, output, 0);
+AudioControlSGTL5000     control;
 // GUItool: end automatically generated code
 
 // NOTE: m_varName denotes variables with corresponding MIDI data
@@ -99,73 +103,81 @@ AudioControlSGTL5000     control;        //xy=83,48
 
 // constants
 const int BAUD_RATE = 9600;
-const int AUDIO_MEMORY = 192;
-const int MSEC_TIMER = 15;
+const int AUDIO_MEMORY = 1024;
+const int MSEC_TIME = 15;
 elapsedMillis msec = 0;
 
 // multiplexers
 const int MUX_DELAY_TIME = 40;
-const int MUX_01_S0 = 0;
-const int MUX_01_Z = A2;
-const int MUX_02_S0 = 3;
-const int MUX_02_Z = A3;
+const int MUX_S0 = 32;
+const int MUX_Z = A2;
 
 // MIDI
-MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI_2)
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial6, MIDI_6)
 int m_note;
 int m_velocity;
 
 // potentimoeters (+ values)
-float p_oscFrequency = 55.0f;
-float p_osc01Gain = 0.5f;
-float p_osc02Gain = 0.5f;
+const int OSC_MULT_SWITCH_01 = 0;
+const int OSC_MULT_SWITCH_02 = 1;
+const int OSC_01_FREQ_POT = 15;
+const int OSC_01_WAVEFORM_SWITCH_01 = 33;
+const int OSC_01_WAVEFORM_SWITCH_02 = 34;
+const int OSC_02_FREQ_POT = A17;
+const int OSC_02_WAVEFORM_SWITCH_01 = 35;
+const int OSC_02_WAVEFORM_SWITCH_02 = 36;
+float p_osc01Frequency = 55.0f;
+float p_osc02Frequency = 55.0f;
 
 const char *SAMPLER_FILENAME = "gnd-wrk.wav";
 
-const int MOD_FREQ_POT = 0;
+const int MOD_WAVEFORM_SWITCH_01 = 2;
+const int MOD_WAVEFORM_SWITCH_02 = 3;
+const int MOD_FREQ_POT = A16;
 float p_modFrequency = 520.0f;
-const int MOD_DEPTH_POT = 2;
+const int MOD_DEPTH_POT = A15;
 float p_modDepth = 0.0f;
-const int MOD_PHASE_POT = 1;
+const int MOD_PHASE_POT = 14;
 float p_modPhase = 0.0f;
 
 const int DLY_TIME_POT = 3;
 float p_delayTime = 60.0f; 
-float previousDelayTime = p_delayTime;
-const int DLY_FBCK_POT = 4;
+const int DLY_FBCK_POT = A14;
 float p_delayFeedback = 0.0f;
 
-const int FLTR_EG_ATK_POT = 4;
+const int FLTR_EG_ATK_POT = 10;
 float p_filterEgAttack = 10.0f;
-const int FLTR_EG_DEC_POT = 5;
+const int FLTR_EG_DEC_POT = 8;
 float p_filterEgDecay = 120.0f;
-const int FLTR_EG_SUS_POT = 6;
+const int FLTR_EG_SUS_POT = 5;
 float p_filterEgSustain = 0.4f;
-const int FLTR_EG_REL_POT = 7;
+const int FLTR_EG_REL_POT = 2;
 float p_filterEgRelease = 240.0f;
-const int FLTR_CUTOFF_POT = 5;
+const int FLTR_CUTOFF_POT = 14;
 float p_filterCutoff = 20000.0f;
-const int FLTR_RES_POT = 6;
+const int FLTR_RES_POT = 12;
 float p_filterResonance = 1.4f;
+const int FLTR_OCT_CTRL_POT = 11;
 float p_filterOctaveControl = 3.6f;
+const int FLTR_EG_INT_POT = 13;
 float p_filterEgInt = 0.2f;
 
-const int AMP_EG_ATK_POT = 0;
+const int AMP_EG_ATK_POT = 9;
 float p_ampEgAttack = 10.0f;
-const int AMP_EG_DEC_POT = 1;
+const int AMP_EG_DEC_POT = 7;
 float p_ampEgDecay = 120.0f;
-const int AMP_EG_SUS_POT = 2;
+const int AMP_EG_SUS_POT = 4;
 float p_ampEgSustain = 0.4f;
-const int AMP_EG_REL_POT = 3;
+const int AMP_EG_REL_POT = 1;
 float p_ampEgRelease = 240.0f;
 
-const int MIXER_AMP_POT = 7;
+const int MIXER_AMP_POT = 0;
 float p_mixerAmp = 1.0f;
 
 // switches (+ values)
-int s_osc01Waveform = 1;
-int s_osc02Waveform = 3;
 float s_oscMultiplier = 1.0f;
+int s_osc01Waveform = WAVEFORM_SINE;
+int s_osc02Waveform = WAVEFORM_TRIANGLE;
 
 int s_modWaveform = 2;
 
@@ -174,6 +186,7 @@ enum FilterMode {
     HIGH_PASS_FILTER = 1
 };
 FilterMode s_filterMode = LOW_PASS_FILTER;
+const int FLTR_MODE_SWITCH = 4;
 
 enum MixerMode {
     OSC = 0,
@@ -181,9 +194,11 @@ enum MixerMode {
     SAMPLER = 2
 };
 MixerMode s_mixerMode = OSC;
+const int MXR_MODE_SWITCH_01 = 5;
+const int MXR_MODE_SWITCH_02 = 9; 
 
 // buttons
-const int TRIG_BUTTON_PIN = 8;
+const int TRIG_BUTTON_PIN = 37;
 Bounce trigButton = Bounce(TRIG_BUTTON_PIN, 18);
 
 ////////////
@@ -194,10 +209,9 @@ void setup() {
     Serial.begin(BAUD_RATE);
 
     initAudio();
-    //initMIDI();
-    //initSdCard();
-    initMultiplexer(MUX_01_S0, MUX_01_Z);
-    initMultiplexer(MUX_02_S0, MUX_02_Z);
+    // initMIDI();
+    initSdCard();
+    initMultiplexer(MUX_S0, MUX_Z);
     
     delay(1000);
     
@@ -219,7 +233,7 @@ void initAudio() {
  *
  */
 void initMIDI() {
-    MIDI_2.begin(MIDI_CHANNEL_OMNI);
+    MIDI_6.begin(MIDI_CHANNEL_OMNI);
 } 
 
 /*
@@ -240,9 +254,9 @@ void initSdCard() {
  *
  */
 void initMultiplexer(uint8_t muxS0, uint8_t muxZ) {
-    for(int i = 0; i < 3; i++) {
-        pinMode(muxS0 + i, OUTPUT);
-        digitalWrite(muxS0 + i, LOW);
+    for(int i = 0; i < 4; i++) {
+        pinMode(muxS0 - i, OUTPUT);
+        digitalWrite(muxS0 - i, LOW);
         delayMicroseconds(MUX_DELAY_TIME);
     }
 }
@@ -251,6 +265,21 @@ void initMultiplexer(uint8_t muxS0, uint8_t muxZ) {
  * Initialize all controls (buttons, pots, switches, etc.) as needed.
  */
 void initControls() {
+    pinMode(OSC_01_WAVEFORM_SWITCH_01, INPUT_PULLUP);
+    pinMode(OSC_01_WAVEFORM_SWITCH_02, INPUT_PULLUP);
+    pinMode(OSC_02_WAVEFORM_SWITCH_01, INPUT_PULLUP);
+    pinMode(OSC_02_WAVEFORM_SWITCH_02, INPUT_PULLUP);
+    pinMode(OSC_MULT_SWITCH_01, INPUT_PULLUP);
+    pinMode(OSC_MULT_SWITCH_02, INPUT_PULLUP);
+
+    pinMode(MOD_WAVEFORM_SWITCH_01, INPUT_PULLUP);
+    pinMode(MOD_WAVEFORM_SWITCH_02, INPUT_PULLUP);
+
+    pinMode(FLTR_MODE_SWITCH, INPUT_PULLUP);
+
+    pinMode(MXR_MODE_SWITCH_01, INPUT_PULLUP);
+    pinMode(MXR_MODE_SWITCH_02, INPUT_PULLUP);
+
     pinMode(TRIG_BUTTON_PIN, INPUT_PULLUP);
 }
 
@@ -259,10 +288,10 @@ void initControls() {
  */
 void initComponents() {
     // oscillator
-    osc01.begin(1.0f, p_oscFrequency, s_osc01Waveform);
-    osc02.begin(1.0f, p_oscFrequency, s_osc02Waveform);
-    oscMixer.gain(0, p_osc01Gain);
-    oscMixer.gain(1, p_osc02Gain);
+    osc01.begin(1.0f, p_osc01Frequency, s_osc01Waveform);
+    osc02.begin(1.0f, p_osc01Frequency, s_osc02Waveform);
+    oscMixer.gain(0, 0.5f);
+    oscMixer.gain(1, 0.5f);
 
     inputMixer.gain(0, 0.5f);
     inputMixer.gain(1, 0.5f);
@@ -307,6 +336,9 @@ void initComponents() {
     lpfL.frequency(p_filterCutoff);
     lpfL.resonance(p_filterResonance);
     lpfL.octaveControl(p_filterOctaveControl);
+    hpfL.frequency(p_filterCutoff);
+    hpfL.resonance(p_filterResonance);
+    hpfL.octaveControl(p_filterOctaveControl);
 
     filterEgR.attack(p_filterEgAttack);
     filterEgR.decay(p_filterEgDecay);
@@ -316,6 +348,9 @@ void initComponents() {
     lpfR.frequency(p_filterCutoff);
     lpfR.resonance(p_filterResonance);
     lpfR.octaveControl(p_filterOctaveControl);
+    hpfR.frequency(p_filterCutoff);
+    hpfR.resonance(p_filterResonance);
+    hpfR.octaveControl(p_filterOctaveControl);
 
     filterLMixer.gain(0, 1.0f);
     filterLMixer.gain(1, 0.0f);
@@ -327,11 +362,13 @@ void initComponents() {
     ampEgL.decay(p_ampEgDecay);
     ampEgL.sustain(p_ampEgSustain);
     ampEgL.release(p_ampEgRelease);
+    ampEgLAmp.gain(1.0f);
 
     ampEgR.attack(p_ampEgAttack);
     ampEgR.decay(p_ampEgDecay);
     ampEgR.sustain(p_ampEgSustain);
     ampEgR.release(p_ampEgRelease);
+    ampEgRAmp.gain(1.0f);
 }
 
 ////////////
@@ -339,14 +376,14 @@ void initComponents() {
 ////////////
 
 void loop() {
-    if(msec < MSEC_TIMER) return;
+    if(msec < MSEC_TIME) return;
     msec = 0;
 
     checkTrigButton();
-
-    processMIDI();
+    // processMIDI();
 
     processMixer();
+
     processMod();
     processDelay();
     processFilter();
@@ -360,59 +397,74 @@ void loop() {
 void checkTrigButton() {
     trigButton.update();
     if(trigButton.fallingEdge()) {
-        filterEgL.noteOn();
-        filterEgR.noteOn();
-        ampEgL.noteOn();
-        ampEgR.noteOn();
+        triggerNoteOn();
     } else if(trigButton.risingEdge()) {
-        filterEgL.noteOff();
-        filterEgR.noteOff();
-        ampEgL.noteOff();
-        ampEgR.noteOff();
+        triggerNoteOff();
     }
+}
+
+void triggerNoteOn() {
+    filterEgL.noteOn();
+    filterEgR.noteOn();
+    ampEgL.noteOn();
+    ampEgR.noteOn();
+}
+
+void triggerNoteOff() {
+    filterEgL.noteOff();
+    filterEgR.noteOff();
+    ampEgL.noteOff();
+    ampEgR.noteOff();
 }
 
 void processMIDI() {
     int type, note, velocity, channel, data1, data2;
 
-    if(MIDI_2.read()) {
-        type = MIDI_2.getType();
+    if(MIDI_6.read()) {
+        type = MIDI_6.getType();
         switch(type) {
             case midi::NoteOn:
-                channel = MIDI_2.getChannel();
-                note = MIDI_2.getData1();
-                velocity = MIDI_2.getData2();
+                channel = MIDI_6.getChannel();
+                note = MIDI_6.getData1();
+                velocity = MIDI_6.getData2();
+
+                //MIDI_6.sendNoteOn(note, velocity, channel);
 
                 m_note = note;
                 m_velocity = velocity;
 
-                if(velocity > 0) {
-                    printMIDIData("Note On", channel, note, velocity);
-                } else {
-                    printMIDIData("Note Off", channel, note, velocity);
-                }
+                processOsc(noteToFreq(m_note));
+                processAmpEg(m_velocity / 127.0f);
 
-                MIDI_2.sendNoteOn(note, velocity, channel);
+                triggerNoteOn();
+
+                if(velocity > 0) {
+                    printMIDIData("Note On", channel, m_note, m_velocity);
+                } else {
+                    printMIDIData("Note Off", channel, m_note, m_velocity);
+                }
 
                 break;
 
             case midi::NoteOff:
-                note = MIDI_2.getData1();
-                velocity = MIDI_2.getData2();
-                channel = MIDI_2.getChannel();
+                note = MIDI_6.getData1();
+                velocity = MIDI_6.getData2();
+                channel = MIDI_6.getChannel();
+
+                //MIDI_6.sendNoteOff(note, velocity, channel);
 
                 m_note = note;
                 m_velocity = velocity;
 
-                printMIDIData("Note Off", channel, note, velocity);
+                triggerNoteOff();
 
-                MIDI_2.sendNoteOff(note, velocity, channel);
+                printMIDIData("Note Off", channel, m_note, m_velocity);
 
                 break;
 
             default: 
-                data1 = MIDI_2.getData1();
-                data2 = MIDI_2.getData2();
+                data1 = MIDI_6.getData1();
+                data2 = MIDI_6.getData2();
 
                 printMIDIData(data1, data2);
 
@@ -461,6 +513,18 @@ void printMIDIData(String start, int channel, int note, int velocity) {
  * Update mixer inputs and sound generators according to the mixer mode.
  */
 void processMixer() {
+    int pin1 = digitalRead(MXR_MODE_SWITCH_01);
+    int pin2 = digitalRead(MXR_MODE_SWITCH_02);
+    if(pin1) {
+        if(pin2) {
+            s_mixerMode = LINE_IN;
+        } else {
+            s_mixerMode = OSC;
+        }
+    } else {
+        s_mixerMode = SAMPLER;
+    }
+
     processMixerInputs((int) s_mixerMode);
 
     switch(s_mixerMode) {
@@ -469,12 +533,11 @@ void processMixer() {
             processOsc();
             break;
         case LINE_IN:
-            processSampler();
-            break;
-        case SAMPLER:
             // TODO
             break;
-
+        case SAMPLER:
+            processSampler();
+            break;
     }
 }
 
@@ -485,11 +548,7 @@ void processMixer() {
  */
 void processMixerInputs(int activeChannel) {
     for(int i = 0; i < 4; i++) {
-        if(i == activeChannel) {
-            mixer.gain(i, 1.0f);
-        } else {
-            mixer.gain(i, 0.0f);
-        }
+        mixer.gain(i, i == activeChannel ? 1.0f : 0.0f);
     }
 }
 
@@ -497,24 +556,81 @@ void processMixerInputs(int activeChannel) {
  * Update oscillator's frequency, waveform, and octave multiplier.
  */
 void processOsc() {
-    float scaled = 0.2f; // CHANGE
-    p_oscFrequency = 20.0f + (2000.0f * scaled);
+    int osc01Pin1 = digitalRead(OSC_01_WAVEFORM_SWITCH_01);
+    int osc01Pin2 = digitalRead(OSC_01_WAVEFORM_SWITCH_02);
+    int osc01Result;
+    if(osc01Pin1) {
+        if(osc01Pin2) {
+            osc01Result = WAVEFORM_SAWTOOTH;
+        } else {
+            osc01Result = WAVEFORM_SQUARE;
+        }
+    } else {
+        osc01Result = WAVEFORM_SINE;
+    }
+    if(osc01Result != s_osc01Waveform) {
+        s_osc01Waveform = osc01Result;
+        osc01.begin(s_osc01Waveform);
+        osc02.begin(s_osc02Waveform);
+    }
 
-    p_oscFrequency = 55.0f; // DELETE LATER (when more pots)
+    int osc02Pin1 = digitalRead(OSC_02_WAVEFORM_SWITCH_01);
+    int osc02Pin2 = digitalRead(OSC_02_WAVEFORM_SWITCH_02);
+    int osc02Result;
+    if(osc02Pin1) {
+        if(osc02Pin2) {
+            osc02Result = WAVEFORM_SAWTOOTH;
+        } else {
+            osc02Result = WAVEFORM_SQUARE;
+        }
+    } else {
+        osc02Result = WAVEFORM_TRIANGLE;
+    }
+    if(osc02Result != s_osc02Waveform) {
+        s_osc02Waveform = osc02Result;
+        osc02.begin(s_osc02Waveform);
+        osc02.begin(s_osc02Waveform);
+    }
 
-    p_oscFrequency *= s_oscMultiplier;
+    int multPin1 = digitalRead(OSC_MULT_SWITCH_01);
+    int multPin2 = digitalRead(OSC_MULT_SWITCH_02);
+    if(multPin1) {
+        if(multPin2) {
+            s_oscMultiplier = 1.0f;
+        } else {
+            s_oscMultiplier = 0.5f;
+        }
+    } else {
+        s_oscMultiplier = 2.0f;
+    }
 
-    osc01.frequency(p_oscFrequency);
-    osc02.frequency(p_oscFrequency);
+    float osc01Frequency = 20.0f + (2000.0f * readMuxZPin(OSC_01_FREQ_POT, MUX_S0, MUX_Z));
+    p_osc01Frequency = osc01Frequency * s_oscMultiplier;
+    float osc02Frequency = 20.0f + (2000.0f * analogRead(OSC_02_FREQ_POT) / 1023.0f);
+    p_osc02Frequency = osc02Frequency * s_oscMultiplier;
+
+    osc01.frequency(p_osc01Frequency);
+    osc02.frequency(p_osc02Frequency);
+}
+
+/*
+ * Update oscillator's frequency, waveform, and octave multiplier.
+ * 
+ * @param freq a specified frequency for the oscillators
+ */
+void processOsc(float freq) {
+    p_osc01Frequency = freq;
+    p_osc01Frequency *= s_oscMultiplier;
+
+    osc01.frequency(p_osc01Frequency);
+    osc02.frequency(p_osc01Frequency);
 }
 
 /*
  * Continuously play the specified sample's wav file.
  */
 void processSampler() {
-    Serial.println("Trying to play sample...");
     if(!sampler.isPlaying()) {
-        Serial.println("PLAYING");
         sampler.play(SAMPLER_FILENAME);
         delay(1);
     }
@@ -525,16 +641,34 @@ void processSampler() {
  * 
  */
 void processMod() {
-    float freq = readMuxZPin(MOD_FREQ_POT, MUX_01_S0, MUX_01_Z);
+    int pin1 = digitalRead(MOD_WAVEFORM_SWITCH_01);
+    int pin2 = digitalRead(MOD_WAVEFORM_SWITCH_02);
+    int result;
+    if(pin1) {
+        if(pin2) {
+            result = WAVEFORM_SAWTOOTH;
+        } else {
+            result = WAVEFORM_SQUARE;
+        }
+    } else {
+        result = WAVEFORM_SINE;
+    }
+    if(result != s_modWaveform) {
+        s_modWaveform = result;
+        modL.begin(s_modWaveform);
+        modR.begin(s_modWaveform);
+    }
+
+    float freq = analogRead(MOD_FREQ_POT) / 1023.0f;
     p_modFrequency = 0.00000001f + (5200.0f * freq);
     modL.frequency(p_modFrequency);
     modR.frequency(p_modFrequency);
 
-    p_modDepth = readMuxZPin(MOD_DEPTH_POT, MUX_01_S0, MUX_01_Z);
+    p_modDepth = analogRead(MOD_DEPTH_POT) / 1023.0f;
     modL.amplitude(p_modDepth);
     modR.amplitude(p_modDepth);
 
-    float phase = readMuxZPin(MOD_PHASE_POT, MUX_01_S0, MUX_01_Z);
+    float phase = readMuxZPin(MOD_PHASE_POT, MUX_S0, MUX_Z);
     p_modPhase = 180.0f * phase;
     modL.phaseModulation(p_modPhase);
     modR.phaseModulation(p_modPhase);
@@ -546,10 +680,9 @@ void processMod() {
  * times greater than 449.39ms (1 block = 2.9ms).
  */
 void processDelay() {
-    float time = readMuxZPin(DLY_TIME_POT, MUX_01_S0, MUX_01_Z);
-    p_delayTime = 10.0f + (170.0f * time);
-    if(abs(p_delayTime - previousDelayTime) > 0.3f) {
-        previousDelayTime = p_delayTime;
+    float time = 10.0f + (1240.0f * readMuxZPin(DLY_TIME_POT, MUX_S0, MUX_Z));
+    if(time != p_delayTime) {
+        p_delayTime = time;
         delayL.delay(0, p_delayTime);
         delayL.delay(1, 0.25f * p_delayTime);
 
@@ -557,7 +690,7 @@ void processDelay() {
         delayR.delay(1, 0.25f * p_delayTime);
     }
 
-    p_delayFeedback = readMuxZPin(DLY_FBCK_POT, MUX_01_S0, MUX_01_Z);
+    p_delayFeedback = analogRead(DLY_FBCK_POT) / 1023.0f;
     delayAmpL.gain(p_delayFeedback);
     delayAmpR.gain(p_delayFeedback);
 }
@@ -566,37 +699,43 @@ void processDelay() {
  * Update the filter's cutoff frequency, resonance, envelope intensity, and octave control.
  */
 void processFilter() {
+    s_filterMode = (FilterMode) !digitalRead(FLTR_MODE_SWITCH);
     filterLMixer.gain(s_filterMode, 1.0f);
     filterLMixer.gain(!s_filterMode, 0.0f);
-
     filterRMixer.gain(s_filterMode, 1.0f);
     filterRMixer.gain(!s_filterMode, 0.0f);
 
-    float cutoff = readMuxZPin(FLTR_CUTOFF_POT, MUX_01_S0, MUX_01_Z);
-    p_filterCutoff = 20.0f + (20000.0f * cutoff);
+    p_filterCutoff = 20000.0f * readMuxZPin(FLTR_CUTOFF_POT, MUX_S0, MUX_Z);
 
-    float resonance = readMuxZPin(FLTR_RES_POT, MUX_01_S0, MUX_01_Z);
+    float resonance = readMuxZPin(FLTR_RES_POT, MUX_S0, MUX_Z);
     p_filterResonance = 0.8f + (4.0f * resonance);
 
-    float attack = 1000.0f * readMuxZPin(FLTR_EG_ATK_POT, MUX_02_S0, MUX_02_Z);
+    float octaveControl = readMuxZPin(FLTR_OCT_CTRL_POT, MUX_S0, MUX_Z);
+    p_filterOctaveControl = octaveControl * 4.0f;    
+
+    p_filterEgInt = readMuxZPin(FLTR_EG_INT_POT, MUX_S0, MUX_Z);
+    filterEgLAmp.gain(p_filterEgInt);
+    filterEgRAmp.gain(p_filterEgInt);
+
+    float attack = 1000.0f * readMuxZPin(FLTR_EG_ATK_POT, MUX_S0, MUX_Z);
     if(attack != p_filterEgAttack) {
         p_filterEgAttack = attack;
         filterEgL.attack(p_filterEgAttack);
         filterEgR.attack(p_filterEgAttack);
     }
-    float decay = 1000.0f * readMuxZPin(FLTR_EG_DEC_POT, MUX_02_S0, MUX_02_Z);
+    float decay = 1000.0f * readMuxZPin(FLTR_EG_DEC_POT, MUX_S0, MUX_Z);
     if(decay != p_filterEgDecay) {
         p_filterEgDecay = decay;
         filterEgL.decay(p_filterEgDecay);
         filterEgR.decay(p_filterEgDecay);
     }
-    float sustain = readMuxZPin(FLTR_EG_SUS_POT, MUX_02_S0, MUX_02_Z);
+    float sustain = readMuxZPin(FLTR_EG_SUS_POT, MUX_S0, MUX_Z);
     if(sustain != p_filterEgSustain) {
         p_filterEgSustain = sustain;
         filterEgL.sustain(p_filterEgSustain);
         filterEgR.sustain(p_filterEgSustain);
     }
-    float release = 2000.0f * readMuxZPin(FLTR_EG_REL_POT, MUX_02_S0, MUX_02_Z);
+    float release = 2000.0f * readMuxZPin(FLTR_EG_REL_POT, MUX_S0, MUX_Z);
     if(release != p_filterEgRelease) {
         p_filterEgRelease = release;
         filterEgL.release(p_filterEgRelease);
@@ -611,6 +750,9 @@ void processFilter() {
 
             lpfL.resonance(p_filterResonance);
             lpfR.resonance(p_filterResonance);
+
+            lpfL.octaveControl(p_filterOctaveControl);
+            lpfR.octaveControl(p_filterOctaveControl);
             break;
 
         case HIGH_PASS_FILTER:
@@ -619,6 +761,9 @@ void processFilter() {
 
             hpfL.resonance(p_filterResonance);
             hpfR.resonance(p_filterResonance);
+
+            hpfL.octaveControl(p_filterOctaveControl);
+            hpfR.octaveControl(p_filterOctaveControl);
             break;
     }
 }
@@ -627,23 +772,39 @@ void processFilter() {
  * Update the amplifier's level.
  */
 void processAmp() {
+    float attack = 1000.0f * readMuxZPin(AMP_EG_ATK_POT, MUX_S0, MUX_Z);
+    if(attack != p_ampEgAttack) {
+        p_ampEgAttack = attack;
+        ampEgL.attack(p_ampEgAttack);
+        ampEgR.attack(p_ampEgAttack);
+    }
+    float decay = 1000.0f * readMuxZPin(AMP_EG_DEC_POT, MUX_S0, MUX_Z);
+    if(decay != p_ampEgDecay) {
+        p_ampEgDecay = p_ampEgDecay;
+        ampEgL.decay(p_ampEgDecay);
+        ampEgR.decay(p_ampEgDecay);
+    }
+    float sustain = readMuxZPin(AMP_EG_SUS_POT, MUX_S0, MUX_Z);
+    if(sustain != p_ampEgSustain) {
+        p_ampEgSustain = sustain;
+        ampEgL.sustain(p_ampEgSustain);
+        ampEgR.sustain(p_ampEgSustain);
+    }
+    float release = 2000.0f * readMuxZPin(AMP_EG_REL_POT, MUX_S0, MUX_Z);
+    if(release != p_ampEgRelease) {
+        p_ampEgRelease = release;
+        ampEgL.release(p_ampEgRelease);
+        ampEgR.release(p_ampEgRelease);
+    }
 
-    float attackScaled = readMuxZPin(AMP_EG_ATK_POT, MUX_02_S0, MUX_02_Z);
-    ampEgL.attack(attackScaled * 1000.0f);
-    ampEgR.attack(attackScaled * 1000.0f);
-    float decayScaled = readMuxZPin(AMP_EG_DEC_POT, MUX_02_S0, MUX_02_Z);
-    ampEgL.decay(decayScaled * 1000.0f);
-    ampEgR.decay(decayScaled * 1000.0f);
-    float sustainScaled = readMuxZPin(AMP_EG_SUS_POT, MUX_02_S0, MUX_02_Z);
-    ampEgL.sustain(sustainScaled);
-    ampEgR.sustain(sustainScaled);
-    float releaseScaled = readMuxZPin(AMP_EG_REL_POT, MUX_02_S0, MUX_02_Z);
-    ampEgL.release(releaseScaled * 2000.0f);
-    ampEgR.release(releaseScaled * 2000.0f);
-
-    p_mixerAmp = readMuxZPin(MIXER_AMP_POT, MUX_01_S0, MUX_01_Z);
+    p_mixerAmp = readMuxZPin(MIXER_AMP_POT, MUX_S0, MUX_Z);
 
     control.volume(p_mixerAmp);
+}
+
+void processAmpEg(float amp) {
+    ampEgLAmp.gain(amp);
+    ampEgRAmp.gain(amp);
 }
 
 /* 
@@ -669,9 +830,9 @@ float readMuxZPin(int muxY, int muxS0, int muxZ) {
  * @param muxZ analog pin receiving the multiplexer's z-output
  */
 void setMuxSPins(int muxY, int muxS0, int muxZ) {
-    for(int i = 0; i < 3; i++) {
+    for(int i = 0; i < 4; i++) {
         bool expr = muxY & (1 << i);
-        digitalWrite(muxS0 + i, expr ? HIGH : LOW);
+        digitalWrite(muxS0 - i, expr ? HIGH : LOW);
     }
 
     delayMicroseconds(MUX_DELAY_TIME);
